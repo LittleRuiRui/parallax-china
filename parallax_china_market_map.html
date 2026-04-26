@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallax — China Market Map</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f0f0e;
+  --paper: #f5f2ec;
+  --paper2: #ede9e1;
+  --rule: #c8c2b5;
+  --accent: #c4411c;
+  --accent2: #1a5c3a;
+  --accent3: #1c3a5c;
+  --gold: #b8860b;
+  --muted: #7a7570;
+  --white: #ffffff;
+  --serif: 'DM Serif Display', Georgia, serif;
+  --sans: 'Instrument Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.masthead {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 48px 60px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.masthead::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -60px;
+  width: 320px; height: 320px;
+  border: 1px solid rgba(245,242,236,0.08);
+  border-radius: 50%;
+}
+.masthead::after {
+  content: '';
+  position: absolute;
+  top: 20px; right: 40px;
+  width: 160px; height: 160px;
+  border: 1px solid rgba(245,242,236,0.12);
+  border-radius: 50%;
+}
+.masthead-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.masthead-title {
+  font-family: var(--serif);
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.08;
+  color: var(--paper);
+  margin-bottom: 12px;
+}
+.masthead-title em { color: var(--gold); font-style: italic; }
+.masthead-sub {
+  font-size: 14px;
+  color: rgba(245,242,236,0.55);
+  max-width: 520px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.masthead-meta {
+  margin-top: 28px;
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.meta-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: rgba(245,242,236,0.35);
+  text-transform: uppercase;
+}
+.meta-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+/* ── NAV TABS ── */
+.nav-strip {
+  background: var(--ink);
+  border-top: 1px solid rgba(245,242,236,0.1);
+  padding: 0 60px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+}
+.nav-tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245,242,236,0.4);
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: rgba(245,242,236,0.7); }
+.nav-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ── MAIN LAYOUT ── */
+.main { padding: 48px 60px; max-width: 1400px; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── SEGMENT CARDS ── */
+.segments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-bottom: 48px;
+}
+
+.seg-card {
+  background: var(--paper);
+  padding: 28px 28px 24px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.seg-card:hover { background: var(--white); }
+.seg-card.open { background: var(--ink); color: var(--paper); }
+
+.seg-priority {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.priority-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.p1 .priority-dot { background: var(--accent2); }
+.p2 .priority-dot { background: var(--gold); }
+.p3 .priority-dot { background: var(--accent); }
+
+.seg-card.open .seg-priority { opacity: 0.5; }
+
+.seg-name {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+.seg-sub {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.seg-card.open .seg-sub { color: rgba(245,242,236,0.5); }
+
+.seg-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.pill {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 2px;
+  background: var(--paper2);
+  color: var(--muted);
+}
+.seg-card.open .pill { background: rgba(245,242,236,0.1); color: rgba(245,242,236,0.6); }
+.pill.green { background: #e8f3ed; color: var(--accent2); }
+.pill.amber { background: #f5f0e0; color: var(--gold); }
+.pill.red { background: #f5ece8; color: var(--accent); }
+.seg-card.open .pill.green,
+.seg-card.open .pill.amber,
+.seg-card.open .pill.red { background: rgba(245,242,236,0.12); color: rgba(245,242,236,0.7); }
+
+.seg-toggle {
+  position: absolute;
+  top: 24px; right: 24px;
+  width: 24px; height: 24px;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.seg-card.open .seg-toggle {
+  border-color: rgba(245,242,236,0.3);
+  color: var(--paper);
+  transform: rotate(45deg);
+}
+
+.seg-detail {
+  display: none;
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(245,242,236,0.15);
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(245,242,236,0.8);
+}
+.seg-card.open .seg-detail { display: block; }
+.seg-detail strong { color: var(--paper); font-weight: 600; }
+.seg-detail .firms {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(245,242,236,0.5);
+  line-height: 1.8;
+}
+
+/* ── COMPETITION TABLE ── */
+.comp-section { margin-bottom: 48px; }
+.comp-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.comp-row {
+  display: grid;
+  grid-template-columns: 160px 90px 1fr 180px;
+  gap: 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: start;
+  transition: background 0.12s;
+}
+.comp-row:hover { background: var(--white); }
+.comp-row > div {
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.comp-name { font-weight: 600; font-size: 14px; }
+.comp-cn { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; margin-top: 1px; }
+.threat-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 3px 7px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-top: 3px;
+}
+.threat-high { background: #f5ece8; color: var(--accent); }
+.threat-med { background: #f5f0e0; color: var(--gold); }
+.threat-low { background: #e8f3ed; color: var(--accent2); }
+.threat-none { background: var(--paper2); color: var(--muted); }
+.comp-angle { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* ── ENTRY PRIORITY ── */
+.waves {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+.wave-card {
+  border: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  overflow: hidden;
+  background: var(--white);
+}
+.wave-num {
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+}
+.wave-num .n {
+  font-family: var(--serif);
+  font-size: 36px;
+  line-height: 1;
+  color: var(--gold);
+}
+.wave-num .wl {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245,242,236,0.35);
+  margin-top: 4px;
+}
+.wave-body { padding: 24px 28px; }
+.wave-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.wave-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+.wave-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  background: var(--paper2);
+  color: var(--muted);
+  border-radius: 2px;
+}
+
+/* ── BARRIERS ── */
+.barriers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 48px;
+}
+.barrier-card {
+  border: 1px solid var(--rule);
+  padding: 22px 22px 20px;
+  background: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+.barrier-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+}
+.barrier-card.critical::before { background: var(--accent); }
+.barrier-card.medium::before { background: var(--gold); }
+.barrier-card.info::before { background: var(--accent3); }
+.barrier-level {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.critical .barrier-level { color: var(--accent); }
+.medium .barrier-level { color: var(--gold); }
+.info .barrier-level { color: var(--accent3); }
+.barrier-title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+.barrier-desc { font-size: 12px; color: var(--muted); line-height: 1.65; }
+
+/* ── SUMMARY TABLE ── */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 32px;
+}
+.summary-table th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+}
+.summary-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.summary-table tr:hover td { background: var(--white); }
+.stars { color: var(--gold); letter-spacing: -2px; }
+
+/* ── FOOTER RULE ── */
+.footer-rule {
+  margin-top: 60px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family: var(--serif);
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+.section-title em { color: var(--accent); font-style: italic; }
+.section-intro {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 700px) {
+  .masthead, .nav-strip, .main { padding-left: 20px; padding-right: 20px; }
+  .comp-row { grid-template-columns: 1fr; }
+  .comp-row > div { padding: 8px 12px; }
+  .wave-card { grid-template-columns: 80px 1fr; }
+  .masthead-meta { gap: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-eyebrow">BD Intelligence · Confidential</div>
+  <h1 class="masthead-title">Parallax<br><em>China Market Map</em></h1>
+  <p class="masthead-sub">Greater China go-to-market strategy — client segments, competitive landscape, entry priorities, and market barriers.</p>
+  <div class="masthead-meta">
+    <div class="meta-item"><span class="meta-label">Total AUM Addressable</span><span class="meta-value">¥100T+</span></div>
+    <div class="meta-item"><span class="meta-label">Priority Segments</span><span class="meta-value">6</span></div>
+    <div class="meta-item"><span class="meta-label">Primary Beachhead</span><span class="meta-value">Hong Kong</span></div>
+    <div class="meta-item"><span class="meta-label">As of</span><span class="meta-value">Apr 2026</span></div>
+  </div>
+</div>
+
+<nav class="nav-strip">
+  <button class="nav-tab active" onclick="showSection('segments')">客户段 · Segments</button>
+  <button class="nav-tab" onclick="showSection('competition')">竞争格局 · Competition</button>
+  <button class="nav-tab" onclick="showSection('entry')">进入策略 · Entry</button>
+  <button class="nav-tab" onclick="showSection('barriers')">市场壁垒 · Barriers</button>
+  <button class="nav-tab" onclick="showSection('summary')">总览 · Summary</button>
+</nav>
+
+<div class="main">
+
+<!-- ── SEGMENTS ── -->
+<div class="section active" id="sec-segments">
+  <h2 class="section-title">Client <em>Segments</em></h2>
+  <p class="section-intro">Six addressable client segments, ranked by conversion probability for an AI equity research platform. Click any card to expand detail.</p>
+
+  <div class="segments-grid">
+
+    <div class="seg-card p1" onclick="toggleSeg(this)">
+      <div class="seg-toggle">+</div>
+      <div class="seg-priority"><span class="priority-dot"></span><span style="color:var(--accent2);font-family:var(--mono);font-size:10px;letter-spacing:.1em">Priority 1 — Highest Fit</span></div>
+      <div class="seg-name">Family Offices &amp; SFOs</div>
+      <div class="seg-sub">HK-based · 42% of SFO founders from mainland China · AUM ¥500M–数十亿/family</div>
+      <div class="seg-pills">
+        <span class="pill green">90–150 day cycle</span>
+        <span class="pill green">1–2 approvers</span>
+        <span class="pill">RMB 1–5M/yr</span>
+      </div>
+      <div class="seg-detail">
+        <strong>Why they buy:</strong> Performance-hungry with lean teams. Need differentiated global equity insight that internal staff can't generate. Often managing mainland capital from a HK base — ideal for Parallax's cross-border coverage.<br><br>
+        <strong>Parallax angle:</strong> Global stock scoring + peer benchmarking fills exactly the gap FO analysts have vs. institutional peers. Hard to replicate internally at their team size.<br><br>
+        <div class="firms">Key names: Hillhouse, Hopu Investment, 高瓴系SFOs, Orchid Asia, Anatole Investment Management, and hundreds of smaller SFOs in SH / BJ / SZ / HK</div>
+      </div>
+    </div>
+
+    <div class="seg-card p1" onclick="toggleSeg(this)">
+      <div class="seg-toggle">+</div>
+      <div class="seg-priority"><span class="priority-dot"></span><span style="color:var(--accent2);font-family:var(--mono);font-size:10px;letter-spacing:.1em">Priority 1 — Current ICP</span></div>
+      <div class="seg-name">Private Banks &amp; Brokers</div>
+      <div class="seg-sub">HK-based · UBS, Julius Baer, Noah Holdings, HSBC Private Banking</div>
+      <div class="seg-pills">
+        <span class="pill green">90–150 day cycle</span>
+        <span class="pill green">Already targeted</span>
+        <span class="pill">RMB 500K–3M/yr</span>
+      </div>
+      <div class="seg-detail">
+        <strong>Why they buy:</strong> Private bankers need third-party equity research to support client recommendations without maintaining a full buy-side desk. Parallax fills the analytical gap.<br><br>
+        <strong>Parallax angle:</strong> Branded research reports for client-facing use. Can be white-labeled as an advisory value-add. Enterprise deals possible with multi-city rollouts.<br><br>
+        <div class="firms">Key names: UBS GWM HK, Julius Baer HK, HSBC Private Banking HK, Deutsche Bank Wealth HK, Pictet HK, Lombard Odier HK, Noah Holdings (诺亚财富)</div>
+      </div>
+    </div>
+
+    <div class="seg-card p2" onclick="toggleSeg(this)">
+      <div class="seg-toggle">+</div>
+      <div class="seg-priority"><span class="priority-dot"></span><span style="color:var(--gold);font-family:var(--mono);font-size:10px;letter-spacing:.1em">Priority 2</span></div>
+      <div class="seg-name">Foreign AM China Branches</div>
+      <div class="seg-sub">913 QFII-licensed institutions · BlackRock WFOE, Fidelity, Neuberger Berman, Schroders</div>
+      <div class="seg-pills">
+        <span class="pill amber">120–365 day cycle</span>
+        <span class="pill">RMB 1–8M/yr</span>
+        <span class="pill">HQ approval needed</span>
+      </div>
+      <div class="seg-detail">
+        <strong>Why they buy:</strong> China-dedicated teams need China-specific stock intelligence. Global HQ tools typically don't cover A-shares well. Parallax fills the local analytical gap — positioning as an "A-share intelligence layer" on top of existing global systems.<br><br>
+        <strong>Parallax angle:</strong> A-share + HK dual-coverage scoring is a genuine white space. Neuberger WFOE approved Nov 2024 — new operations = active vendor evaluation window.<br><br>
+        <div class="firms">Key names: BlackRock Investment Management (Shanghai), Fidelity International China, Neuberger Berman China, Schroders China, JPMorgan AM China, Amundi China</div>
+      </div>
+    </div>
+
+    <div class="seg-card p2" onclick="toggleSeg(this)">
+      <div class="seg-toggle">+</div>
+      <div class="seg-priority"><span class="priority-dot"></span><span style="color:var(--gold);font-family:var(--mono);font-size:10px;letter-spacing:.1em">Priority 2</span></div>
+      <div class="seg-name">Private &amp; Quant Funds</div>
+      <div class="seg-sub">¥19.9T AUM · 20,289 registered managers · Consolidating around top performers</div>
+      <div class="seg-pills">
+        <span class="pill amber">90–180 day cycle</span>
+        <span class="pill">RMB 500K–5M/yr</span>
+        <span class="pill amber">CIO direct decision</span>
+      </div>
+      <div class="seg-detail">
+        <strong>Why they buy:</strong> Quant funds are already heavy data consumers — AI-scored fundamental signals complement alpha factor libraries. Mid-tier discretionary funds lack internal research depth and are actively seeking tools.<br><br>
+        <strong>Parallax angle:</strong> Factor scores as input to systematic strategies. Peer comparison for discretionary managers. Performance-sharing pricing model worth exploring to align incentives.<br><br>
+        <div class="firms">Key quant: 幻方科技 (High-Flyer), 九坤投资, 明汯投资 · Key discretionary: 高毅资产 (Gaoyi), 景林资产 (Greenwoods), 睿远基金 (Ruiyuan), 东方港湾</div>
+      </div>
+    </div>
+
+    <div class="seg-card p3" onclick="toggleSeg(this)">
+      <div class="seg-toggle">+</div>
+      <div class="seg-priority"><span class="priority-dot"></span><span style="color:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:.1em">Priority 3</span></div>
+      <div class="seg-name">Public Mutual Funds</div>
+      <div class="seg-sub">易方达, 华夏, 广发, 博时 · 100–200 analyst teams · Top 30 managers</div>
+      <div class="seg-pills">
+        <span class="pill red">180–360 day cycle</span>
+        <span class="pill">RMB 3–10M/yr</span>
+        <span class="pill red">Committee approval</span>
+      </div>
+      <div class="seg-detail">
+        <strong>Why they buy:</strong> Intense competition on performance. Internal research teams have high coverage volume but limited bandwidth for thematic or smaller-cap names — Parallax fills the gap.<br><br>
+        <strong>Parallax angle:</strong> Supplementary coverage for names outside core analyst coverage. Small/mid-cap screening + thematic universe building. Use brokerage and AM reference customers to accelerate procurement.<br><br>
+        <div class="firms">Key names: 易方达基金, 华夏基金, 广发基金, 博时基金, 富国基金, 嘉实基金, 南方基金</div>
+      </div>
+    </div>
+
+    <div class="seg-card p3" onclick="toggleSeg(this)">
+      <div class="seg-toggle">+</div>
+      <div class="seg-priority"><span class="priority-dot"></span><span style="color:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:.1em">Lowest Priority</span></div>
+      <div class="seg-name">Brokerage Research Depts</div>
+      <div class="seg-sub">130+ firms · 中信证券 top at ¥750M commissions · Under severe margin compression</div>
+      <div class="seg-pills">
+        <span class="pill red">180–360+ day cycle</span>
+        <span class="pill">RMB 500K–15M/yr</span>
+        <span class="pill red">Complex politics</span>
+      </div>
+      <div class="seg-detail">
+        <strong>Why it's hard:</strong> Commission compression constrains budgets. Internal research teams view AI tools as threats. Multi-stakeholder approval (research head + CTO + compliance + business units).<br><br>
+        <strong>Parallax angle:</strong> Position as analyst productivity multiplier, not replacement. Entry via mid-market brokers (5th–10th ranked) where cost-efficiency argument is strongest. Use brokerage relationship to then accelerate AM adoption.<br><br>
+        <div class="firms">Key names: 中信证券, 中金公司 (CICC), 国泰海通, 广发证券, 华泰证券, 长江证券</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── COMPETITION ── -->
+<div class="section" id="sec-competition">
+  <h2 class="section-title">Competitive <em>Landscape</em></h2>
+  <p class="section-intro">Parallax enters a market with entrenched data terminals but a genuine AI intelligence gap. The key positioning is complementary, not competitive, to Wind.</p>
+
+  <div class="comp-section">
+    <div class="comp-label">Domestic Incumbents</div>
+    <div class="comp-row" style="background:var(--paper2);font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted)">
+      <div>Player</div><div>Threat Level</div><div>Positioning</div><div>Parallax Angle</div>
+    </div>
+    <div class="comp-row">
+      <div><span class="comp-name">Wind (万得)</span><span class="comp-cn">Wind Information</span></div>
+      <div><span class="threat-badge threat-high">Entrenched</span></div>
+      <div class="comp-angle">De facto standard terminal in every major institution. Data-heavy, analysis-light. Switching cost is prohibitive. NOT a direct competitor on AI scoring.</div>
+      <div class="comp-angle"><strong>Do not compete.</strong> Position Parallax as the AI intelligence layer on top of Wind. "Wind gives you data, Parallax gives you judgment."</div>
+    </div>
+    <div class="comp-row">
+      <div><span class="comp-name">Choice (Choice数据)</span><span class="comp-cn">东方财富旗下</span></div>
+      <div><span class="threat-badge threat-med">Growing</span></div>
+      <div class="comp-angle">Next-gen terminal targeting elite analysts. Real-time capital flow tracking. Closer to Parallax positioning than Wind — but still data-terminal, not AI scoring.</div>
+      <div class="comp-angle">Differentiate on output quality: Parallax produces investable scores and peer rankings, not raw data feeds.</div>
+    </div>
+    <div class="comp-row">
+      <div><span class="comp-name">慧博投研</span><span class="comp-cn">Hibor Research</span></div>
+      <div><span class="threat-badge threat-low">Niche</span></div>
+      <div class="comp-angle">Research report aggregation + basic analytics. Not AI-native. Strong on Chinese sell-side report database.</div>
+      <div class="comp-angle">Parallax is clearly superior on intelligence depth. Complementary use case — different workflow step.</div>
+    </div>
+    <div class="comp-row">
+      <div><span class="comp-name">同花顺 / 东方财富</span><span class="comp-cn">Tonghuashun / Eastmoney</span></div>
+      <div><span class="threat-badge threat-none">Retail only</span></div>
+      <div class="comp-angle">Retail-facing AI stock picking. Tens of millions of retail users. Not institutional-grade.</div>
+      <div class="comp-angle">No competitive overlap. May be useful as brand credibility signal ("unlike retail tools, Parallax is built for institutional workflows").</div>
+    </div>
+    <div class="comp-row">
+      <div><span class="comp-name">CSMAR (国泰安)</span><span class="comp-cn">China Stock Market DB</span></div>
+      <div><span class="threat-badge threat-none">Academic</span></div>
+      <div class="comp-angle">Academic research database. No investment workflow integration. Used by universities and researchers.</div>
+      <div class="comp-angle">Completely different lane. Zero overlap.</div>
+    </div>
+  </div>
+
+  <div class="comp-section">
+    <div class="comp-label">International Players</div>
+    <div class="comp-row">
+      <div><span class="comp-name">Bloomberg / Refinitiv</span><span class="comp-cn">Terminal incumbents</span></div>
+      <div><span class="threat-badge threat-high">Entrenched</span></div>
+      <div class="comp-angle">Terminal dominance at large institutions. AI research layer is weak and bolted-on. Strong relationship and switching cost moat.</div>
+      <div class="comp-angle">Position Parallax as the AI intelligence layer they don't have. "Your Bloomberg terminal + Parallax scoring = complete workflow."</div>
+    </div>
+    <div class="comp-row">
+      <div><span class="comp-name">FactSet</span><span class="comp-cn">Financial data platform</span></div>
+      <div><span class="threat-badge threat-med">Growing</span></div>
+      <div class="comp-angle">Strong at mid-market institutions. Growing APAC presence. Factor screening capability.</div>
+      <div class="comp-angle">Parallax's scoring model is more opinionated and actionable than FactSet's factor screens. Differentiate on the "score → decision" step.</div>
+    </div>
+    <div class="comp-row">
+      <div><span class="comp-name">BlackRock Aladdin</span><span class="comp-cn">Risk & portfolio system</span></div>
+      <div><span class="threat-badge threat-none">Non-compete</span></div>
+      <div class="comp-angle">Risk/portfolio management system, not equity research. Targets same clients, different workflow entirely.</div>
+      <div class="comp-angle">Potential complement — Aladdin users still need equity scoring. Explore partnership positioning.</div>
+    </div>
+  </div>
+
+  <div class="comp-section">
+    <div class="comp-label">Emerging AI-Native Threat</div>
+    <div style="border:1px solid var(--rule);padding:20px 24px;background:var(--white);font-size:13px;line-height:1.7;color:var(--muted)">
+      Post-DeepSeek (Jan 2025), numerous Chinese AI startups are exploring LLM-based investment research. As of April 2026, none have achieved institutional-grade deployment at scale. <strong style="color:var(--ink)">The first-mover window is open but narrowing.</strong> Parallax's track record, methodology depth, and existing client relationships are the primary moat against domestic AI entrants. Speed of China market entry directly affects the defensibility of this position.
+    </div>
+  </div>
+</div>
+
+<!-- ── ENTRY ── -->
+<div class="section" id="sec-entry">
+  <h2 class="section-title">Entry <em>Strategy</em></h2>
+  <p class="section-intro">Three-wave market entry sequence, from lowest-friction beachhead to highest-AUM targets. Each wave uses the prior wave's track record as social proof.</p>
+
+  <div class="waves">
+    <div class="wave-card">
+      <div class="wave-num"><span class="n">01</span><span class="wl">Wave</span></div>
+      <div class="wave-body">
+        <div class="wave-title">HK Family Offices + Private Banks</div>
+        <div class="wave-desc">Highest receptivity, shortest cycle, English-comfortable decision-makers, no mainland data regulation. Use HK as the beachhead to build China track record and case studies. These clients generate the references needed for Wave 2 foreign AM introductions. Noah Holdings and Julius Baer HK are natural first targets given existing broker/FO positioning.</div>
+        <div class="wave-tags">
+          <span class="tag">90–150 day cycle</span>
+          <span class="tag">English-first outreach</span>
+          <span class="tag">No ICP required</span>
+          <span class="tag">Warm intro via HK finance community</span>
+        </div>
+      </div>
+    </div>
+    <div class="wave-card">
+      <div class="wave-num"><span class="n">02</span><span class="wl">Wave</span></div>
+      <div class="wave-body">
+        <div class="wave-title">Foreign AM China Branches + Mid-tier Private Funds</div>
+        <div class="wave-desc">Leverage Wave 1 HK case studies to approach WFOE teams in Shanghai. Foreign AM teams think in English, have global procurement precedent, and have real China equity gaps to fill. In parallel, target mid-market discretionary private funds (景林, 高毅, 睿远 tier) where CIO makes the call directly. Neuberger Berman WFOE (approved Nov 2024) is highest opportunity — new operation = active vendor evaluation.</div>
+        <div class="wave-tags">
+          <span class="tag">HK case studies as proof</span>
+          <span class="tag">Bilingual pitch required</span>
+          <span class="tag">120–180 day cycle</span>
+          <span class="tag">irgroup@gyasset.com for 高毅</span>
+        </div>
+      </div>
+    </div>
+    <div class="wave-card">
+      <div class="wave-num"><span class="n">03</span><span class="wl">Wave</span></div>
+      <div class="wave-body">
+        <div class="wave-title">Mid-Market Brokers → Public Mutual Funds</div>
+        <div class="wave-desc">Brokers first as a showcase — a brokerage distribution relationship can accelerate AM adoption. Target 5th–10th ranked brokers where the cost-efficiency argument is strongest. Public mutual funds last: use brokerage + AM reference customers to overcome the committee approval barrier. This wave requires a local channel partner or BD hire with institutional relationships in Shanghai/Beijing.</div>
+        <div class="wave-tags">
+          <span class="tag">Local BD hire / partner essential</span>
+          <span class="tag">180–360 day cycle</span>
+          <span class="tag">Chinese-language materials required</span>
+          <span class="tag">Committee procurement process</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="comp-label" style="margin-bottom:16px">Go-to-Market Structure</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:48px">
+    <div style="border:1px solid var(--rule);padding:20px;background:var(--white)">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;margin-bottom:8px">关键 — Channel Partner</div>
+      <div style="font-size:13px;line-height:1.65;color:var(--muted)">Find a local BD partner — ideally someone from a tier-1 sell-side with buy-side relationships. This is not optional for mainland penetration. Cold outreach conversion: &lt;5%. Warm intro via shared contact: 30–50%.</div>
+    </div>
+    <div style="border:1px solid var(--rule);padding:20px;background:var(--white)">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;margin-bottom:8px">Pilot Structure</div>
+      <div style="font-size:13px;line-height:1.65;color:var(--muted)">Offer 60–90 day paid pilots to reduce commitment risk. Pilot pricing at 20–30% of full contract. Evidence-based renewal framing with measurable performance metrics.</div>
+    </div>
+    <div style="border:1px solid var(--rule);padding:20px;background:var(--white)">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent3);text-transform:uppercase;margin-bottom:8px">Pricing Localization</div>
+      <div style="font-size:13px;line-height:1.65;color:var(--muted)">Mainland pricing: 30–50% of Western equivalents at initial rollout. HK pricing can mirror international rates. Wind terminal benchmark: ¥30K–80K/yr per seat — Parallax needs to price relative to this floor.</div>
+    </div>
+    <div style="border:1px solid var(--rule);padding:20px;background:var(--white)">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Content as BD</div>
+      <div style="font-size:13px;line-height:1.65;color:var(--muted)">Run sector-specific Parallax reports (e.g. China consumer, EV supply chain) as lead generation. Send to named targets with a specific observation about their public investment thesis. Gives a concrete conversation hook vs. generic pitch.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BARRIERS ── -->
+<div class="section" id="sec-barriers">
+  <h2 class="section-title">Market <em>Barriers</em></h2>
+  <p class="section-intro">Five structural barriers to entry, each with a mitigation path. Understanding these shapes both BD strategy and product positioning.</p>
+
+  <div class="barriers-grid">
+    <div class="barrier-card critical">
+      <div class="barrier-level">Critical · Legal</div>
+      <div class="barrier-title">Data Localization &amp; Cross-Border Rules</div>
+      <div class="barrier-desc">China's Cybersecurity Law + Data Security Law + PIPL create strict cross-border data transfer requirements. Investment data may qualify as "important data" requiring CSRC/CAC review. Parallax's cloud architecture must support data residency for mainland clients.<br><br><strong>Mitigation:</strong> HK-hosted access for Wave 1. Mainland data residency planning for Wave 3.</div>
+    </div>
+    <div class="barrier-card critical">
+      <div class="barrier-level">Critical · Regulatory</div>
+      <div class="barrier-title">ICP License &amp; AI Governance</div>
+      <div class="barrier-desc">Any SaaS platform serving mainland users needs ICP filing (工信部). AI-generated investment analysis may require CSRC sign-off post-2024 AI governance standards for fund management.<br><br><strong>Mitigation:</strong> HK-hosted access sidesteps mainland ICP as interim strategy. Structure mainland offering under local partner entity to absorb regulatory burden.</div>
+    </div>
+    <div class="barrier-card medium">
+      <div class="barrier-level">High · Cultural</div>
+      <div class="barrier-title">关系 (Guanxi) Dynamics</div>
+      <div class="barrier-desc">Chinese institutional procurement is relationship-first. Cold outreach conversion is &lt;5%. A warm intro from a shared contact is worth six months of email campaigns.<br><br><strong>Mitigation:</strong> Invest in a local BD partner with existing institutional relationships before launching formal outreach. Conference circuit (APB Summit, Caproasia) is the warm-meeting factory.</div>
+    </div>
+    <div class="barrier-card medium">
+      <div class="barrier-level">High · Competitive</div>
+      <div class="barrier-title">Wind's Switching Cost Moat</div>
+      <div class="barrier-desc">Wind is embedded in every major institution's research workflow. Analysts cannot imagine working without it. Attempting to replace Wind triggers immediate rejection.<br><br><strong>Mitigation:</strong> Position as additive, never competitive. "Wind + Parallax" framing. Emphasize different workflow step: data retrieval (Wind) vs. investment judgment (Parallax).</div>
+    </div>
+    <div class="barrier-card info">
+      <div class="barrier-level">Medium · Pricing</div>
+      <div class="barrier-title">Price Anchoring to Domestic Tools</div>
+      <div class="barrier-desc">Mainland institutions benchmark against Wind (¥30K–80K/yr per seat). International SaaS pricing feels expensive by comparison. HK/FO segment is less price-sensitive.<br><br><strong>Mitigation:</strong> Localized pricing tiers essential. ROI framing ("alpha generated per dollar spent") beats cost comparison. Start with HK pricing, establish track record, then negotiate mainland pricing from a position of proof.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUMMARY ── -->
+<div class="section" id="sec-summary">
+  <h2 class="section-title">总览 <em>Summary</em></h2>
+  <p class="section-intro">All six segments ranked by overall BD attractiveness. Use this as the master prioritization reference.</p>
+
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>Segment</th>
+        <th>Priority</th>
+        <th>AUM Scale</th>
+        <th>Budget / yr</th>
+        <th>Cycle</th>
+        <th>Key Challenge</th>
+        <th>First Target</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>HK Family Offices / SFOs</strong></td>
+        <td><span class="stars">★★★</span></td>
+        <td>¥500M–数十亿</td>
+        <td>¥1–5M</td>
+        <td>90–150d</td>
+        <td>Finding warm intro to SFO decision-maker</td>
+        <td>HK-based SFOs with mainland founders</td>
+      </tr>
+      <tr>
+        <td><strong>Private Banks (HK)</strong></td>
+        <td><span class="stars">★★★</span></td>
+        <td>N/A (AUM client-held)</td>
+        <td>¥500K–3M</td>
+        <td>90–150d</td>
+        <td>Compliance approval for third-party research</td>
+        <td>Julius Baer, Noah Holdings</td>
+      </tr>
+      <tr>
+        <td><strong>Foreign AM China WFOEs</strong></td>
+        <td><span class="stars">★★</span></td>
+        <td>¥100B+ per firm</td>
+        <td>¥1–8M</td>
+        <td>120–365d</td>
+        <td>HQ procurement approval required</td>
+        <td>Neuberger Berman (newest WFOE, Nov 2024)</td>
+      </tr>
+      <tr>
+        <td><strong>Private / Quant Funds</strong></td>
+        <td><span class="stars">★★</span></td>
+        <td>¥19.9T total market</td>
+        <td>¥500K–5M</td>
+        <td>90–180d</td>
+        <td>Chinese-language outreach; data access proof</td>
+        <td>高毅资产 (irgroup@gyasset.com)</td>
+      </tr>
+      <tr>
+        <td><strong>Public Mutual Funds</strong></td>
+        <td><span class="stars">★</span></td>
+        <td>¥100T+ (industry)</td>
+        <td>¥3–10M</td>
+        <td>180–360d</td>
+        <td>Committee approval; long procurement cycle</td>
+        <td>After Wave 1+2 track record established</td>
+      </tr>
+      <tr>
+        <td><strong>Brokerage Research Depts</strong></td>
+        <td><span class="stars">★</span></td>
+        <td>N/A</td>
+        <td>¥500K–15M</td>
+        <td>180–360d+</td>
+        <td>Budget pressure; internal resistance to AI</td>
+        <td>Mid-market brokers (rank 5–10)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="border:1px solid var(--rule);padding:24px 28px;background:var(--white);margin-bottom:32px">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Core Positioning Statement</div>
+    <div style="font-family:var(--serif);font-size:20px;line-height:1.4;color:var(--ink);margin-bottom:12px">"Wind gives you the data. Parallax gives you the judgment."</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7">Parallax is not a data terminal competitor — it is the AI scoring and peer benchmarking layer that sits on top of existing infrastructure. This positioning sidesteps Wind's moat entirely and speaks directly to the analytical gap that every client segment above has explicitly articulated.</div>
+  </div>
+
+  <div style="border:1px solid var(--rule);padding:24px 28px;background:var(--white)">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent3);margin-bottom:12px">Recommended Immediate Next Steps</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.9">
+      1. <strong style="color:var(--ink)">Map warm intros</strong> — identify any 1st/2nd degree connections into Julius Baer HK, Noah Holdings, or HK-based SFOs<br>
+      2. <strong style="color:var(--ink)">Build a China-specific demo</strong> — run Parallax scores on 5–10 well-known A-share/HK names (Tencent, BABA, BYD, Meituan) to make the product tangible for prospects<br>
+      3. <strong style="color:var(--ink)">Target APB Summit</strong> — Eva Lee (UBS), Ancus Mak (Julius Baer), Fan Cheuk Wan (HSBC) all attend; sponsor or attend for warm meeting access<br>
+      4. <strong style="color:var(--ink)">Approach Neuberger Berman China</strong> — newest WFOE (Nov 2024), actively building vendor stack, no incumbent relationships yet<br>
+      5. <strong style="color:var(--ink)">Identify local BD partner</strong> — ex sell-side with buy-side relationships in SH/HK; this is the single highest-leverage action for mainland penetration
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-rule">
+  <span>Parallax · Greater China BD Intelligence · April 2026</span>
+  <span>Research basis: Perplexity Deep Research + primary web sources + AMAC registry + Asian Private Banker</span>
+</div>
+
+</div><!-- /main -->
+
+<script>
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function toggleSeg(card) {
+  const isOpen = card.classList.contains('open');
+  document.querySelectorAll('.seg-card').forEach(c => c.classList.remove('open'));
+  if (!isOpen) card.classList.add('open');
+}
+</script>
+</body>
+</html>
